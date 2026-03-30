@@ -71,7 +71,9 @@ class CNKIBrowser:
         timezone: str = "Asia/Shanghai",
         browser_args: list = None,
         user_agent: str = None,
-        logger = None
+        logger = None,
+        pdf_preferred: bool = True,  # PDF优先下载
+        pdf_only: bool = False,  # 仅下载PDF模式
     ):
         """
         初始化浏览器
@@ -104,6 +106,15 @@ class CNKIBrowser:
             "Chrome/120.0.0.0 Safari/537.36"
         )
         self.logger = logger or setup_logging(download_dir / "logs")
+
+        # PDF下载策略（核心配置）
+        self.pdf_preferred = pdf_preferred
+        self.pdf_only = pdf_only
+
+        if self.pdf_preferred:
+            self.logger.info("✓ PDF优先下载模式已启用")
+        if self.pdf_only:
+            self.logger.info("✓ PDF专用模式已启用（仅下载PDF格式）")
 
         self.playwright = None
         self.browser: Optional[Browser] = None
@@ -554,27 +565,65 @@ class CNKIBrowser:
             await self.page.goto(paper.url, timeout=self.timeout)
             await self.page.wait_for_load_state("networkidle")
 
-            # 查找PDF下载按钮
+            # 查找PDF下载按钮（核心逻辑：PDF优先）
             download_button = None
+            download_format = "PDF"  # 默认目标格式
 
-            # 尝试PDF下载
-            try:
-                download_button = await self.page.wait_for_selector(
-                    self.PDF_DOWNLOAD_SELECTOR,
-                    timeout=5000
-                )
-                self.logger.info("✓ 找到PDF下载按钮")
-            except:
-                self.logger.info("未找到PDF下载按钮，尝试CAJ格式")
-                # 尝试CAJ下载
+            # 策略1: PDF专用模式 - 仅尝试PDF下载
+            if self.pdf_only:
+                self.logger.info("PDF专用模式：仅查找PDF下载按钮...")
+                try:
+                    download_button = await self.page.wait_for_selector(
+                        self.PDF_DOWNLOAD_SELECTOR,
+                        timeout=5000
+                    )
+                    self.logger.info("✓ 找到PDF下载按钮")
+                except:
+                    self.logger.warning("未找到PDF下载按钮，跳过该论文")
+                    raise Exception("PDF专用模式：未找到PDF下载选项")
+
+            # 策略2: PDF优先模式 - 先尝试PDF，失败后降级到CAJ
+            elif self.pdf_preferred:
+                self.logger.info("PDF优先模式：优先查找PDF下载按钮...")
+                try:
+                    download_button = await self.page.wait_for_selector(
+                        self.PDF_DOWNLOAD_SELECTOR,
+                        timeout=5000
+                    )
+                    self.logger.info("✓ 找到PDF下载按钮")
+                except:
+                    self.logger.info("未找到PDF下载按钮，降级到CAJ格式")
+                    # 降级到CAJ下载
+                    try:
+                        download_button = await self.page.wait_for_selector(
+                            self.CAJ_DOWNLOAD_SELECTOR,
+                            timeout=5000
+                        )
+                        self.logger.info("✓ 找到CAJ下载按钮")
+                        download_format = "CAJ"
+                    except:
+                        raise Exception("未找到PDF或CAJ下载按钮")
+
+            # 策略3: CAJ优先（不推荐，仅用于兼容性）
+            else:
+                self.logger.info("CAJ优先模式（不推荐）...")
                 try:
                     download_button = await self.page.wait_for_selector(
                         self.CAJ_DOWNLOAD_SELECTOR,
                         timeout=5000
                     )
                     self.logger.info("✓ 找到CAJ下载按钮")
+                    download_format = "CAJ"
                 except:
-                    raise Exception("未找到下载按钮")
+                    # 尝试PDF
+                    try:
+                        download_button = await self.page.wait_for_selector(
+                            self.PDF_DOWNLOAD_SELECTOR,
+                            timeout=5000
+                        )
+                        self.logger.info("✓ 找到PDF下载按钮")
+                    except:
+                        raise Exception("未找到下载按钮")
 
             # 点击下载
             self.logger.info("正在点击下载按钮...")
@@ -584,16 +633,14 @@ class CNKIBrowser:
 
             download: Download = await download_info.value
 
-            # 确定保存文件名
+            # 确定保存文件名和扩展名
             suggested_filename = download.suggested_filename
-            # 转换为PDF格式（如果是CAJ）
-            if suggested_filename.endswith('.caj'):
-                suggested_filename = suggested_filename[:-4] + '.pdf'
+            file_extension = '.pdf' if download_format == 'PDF' else '.caj'
 
             # 清理文件名
             clean_filename = sanitize_filename(
-                suggested_filename.replace('.pdf', '')
-            ) + '.pdf'
+                suggested_filename.replace('.caj', '').replace('.pdf', '')
+            ) + file_extension
 
             # 检查文件是否已存在
             existing_files = list(self.download_dir.glob("*.pdf"))

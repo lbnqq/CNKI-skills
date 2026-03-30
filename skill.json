@@ -1,7 +1,7 @@
 {
   "name": "cnki-paper-downloader",
-  "version": "1.0.0",
-  "description": "CNKI论文批量下载器 - 自动从中国知网下载学术论文",
+  "version": "1.1.0",
+  "description": "CNKI论文批量下载器 - 自动从中国知网下载学术论文（默认PDF格式）",
   "author": "Claude",
   "license": "MIT",
 
@@ -11,6 +11,7 @@
   "capabilities": [
     "从CNKI自动检索和下载学术论文",
     "支持10种文献类型：期刊、学位论文、会议、报纸、年鉴、专利、标准、成果、辑刊、图书、文库",
+    "【核心】默认PDF格式下载（PDF优先策略）",
     "智能解析自然语言输入",
     "并发下载，提升效率",
     "自动文件命名和冲突处理",
@@ -73,7 +74,10 @@
         "default_dir": "下载目录",
         "max_concurrent": "最大并发数",
         "timeout": "超时时间（毫秒）",
-        "retry_times": "重试次数"
+        "retry_times": "重试次数",
+        "pdf_preferred": "PDF优先下载（默认true）",
+        "pdf_only": "仅下载PDF格式（默认false，PDF不可用时降级到CAJ）",
+        "skip_paid_papers": "跳过需要付费的论文（默认true）"
       },
       "browser_settings": {
         "headless": "是否无头模式",
@@ -121,6 +125,15 @@
   },
 
   "changelog": {
+    "1.1.0": {
+      "date": "2026-03-30",
+      "changes": [
+        "【核心更新】默认PDF格式下载（pdf_preferred=true）",
+        "添加pdf_only配置选项（PDF专用模式）",
+        "优化下载策略：PDF优先，PDF不可用时自动降级到CAJ",
+        "更新文档说明PDF为默认格式"
+      ]
+    },
     "1.0.0": {
       "date": "2025-01-07",
       "changes": [
