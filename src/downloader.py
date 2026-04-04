@@ -84,7 +84,10 @@ class ConcurrentDownloader:
                 timezone=self.config.browser.timezone if self.config else "Asia/Shanghai",
                 browser_args=self.config.browser.args if self.config else None,
                 user_agent=self.config.browser.user_agent if self.config else None,
-                logger=self.logger
+                logger=self.logger,
+                # PDF下载策略（核心配置）
+                pdf_preferred=self.config.download.pdf_preferred if self.config else True,
+                pdf_only=self.config.download.pdf_only if self.config else False,
             )
 
             await browser.start()

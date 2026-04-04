@@ -17,6 +17,10 @@ class DownloadSettings:
     timeout: int = 30000  # 30秒
     retry_times: int = 2
     chunk_size: int = 1024
+    # PDF下载策略（核心配置）
+    pdf_preferred: bool = True  # 优先下载PDF格式（默认true）
+    pdf_only: bool = False  # 仅下载PDF（false时PDF不可用降级到CAJ）
+    skip_paid_papers: bool = True  # 跳过需要付费的论文
 
 
 @dataclass

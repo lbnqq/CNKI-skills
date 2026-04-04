@@ -1,9 +1,12 @@
 # CNKI论文批量下载器
 
 > 一个自动化从中国知网(CNKI)批量下载学术论文的Claude Skill
+>
+> **🔥 默认PDF格式下载** - 优先下载PDF，PDF不可用时自动降级到CAJ
 
 ## ✨ 特性
 
+- 📄 **PDF优先** - 默认下载PDF格式（兼容性更好），PDF不可用时自动降级到CAJ
 - 🎯 **智能识别** - 支持自然语言输入，自动解析下载需求
 - 📚 **全面覆盖** - 支持10种文献类型：期刊、学位论文、会议、报纸、年鉴、专利、标准、成果、辑刊、图书、文库
 - 🚀 **高效下载** - 并发下载（默认3个任务同时进行），提升效率
@@ -145,7 +148,10 @@ Claude: 好的，我来帮您下载论文。
     "default_dir": "~/Downloads/CNKI",
     "max_concurrent": 3,
     "timeout": 30000,
-    "retry_times": 2
+    "retry_times": 2,
+    "pdf_preferred": true,
+    "pdf_only": false,
+    "skip_paid_papers": true
   },
   "browser_settings": {
     "headless": false,
@@ -163,13 +169,34 @@ Claude: 好的，我来帮您下载论文。
 
 | 设置 | 说明 | 默认值 |
 |------|------|--------|
+| **PDF下载策略** |
+| `pdf_preferred` | **优先下载PDF格式**（核心配置） | `true` |
+| `pdf_only` | **仅下载PDF**（false时PDF不可用降级到CAJ） | `false` |
+| **基础设置** |
 | `default_dir` | 默认下载目录 | `~/Downloads/CNKI` |
 | `max_concurrent` | 最大并发下载数 | `3` |
 | `timeout` | 页面加载超时（毫秒） | `30000` (30秒) |
+| `skip_paid_papers` | 跳过需要付费的论文 | `true` |
+| **浏览器设置** |
 | `headless` | 是否无头模式（不显示浏览器） | `false` |
 | `slow_mo` | 操作延迟（毫秒） | `100` |
+| **文件设置** |
 | `sanitize_filename` | 是否清理文件名特殊字符 | `true` |
 | `max_filename_length` | 最大文件名长度 | `200` |
+
+### PDF下载策略说明
+
+本下载器**默认使用PDF优先策略**：
+
+1. **PDF优先模式**（默认）：`pdf_preferred=true, pdf_only=false`
+   - 优先尝试下载PDF格式
+   - PDF不可用时自动降级到CAJ格式
+   - 适合：需要获取文献，对格式要求不严格
+
+2. **PDF专用模式**：`pdf_preferred=true, pdf_only=true`
+   - 仅下载PDF格式
+   - PDF不可用时跳过该论文
+   - 适合：必须使用PDF格式的场景
 
 ### 自定义配置
 
